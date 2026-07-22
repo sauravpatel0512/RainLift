@@ -1,0 +1,12 @@
+{
+  "data_asset_type": null,
+  "expectation_suite_name": "curated.trips_basic",
+  "ge_cloud_id": null,
+  "meta": { "description": "Documented expectations mirror logic in `run_ge.py`." },
+  "expectations": [
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": { "column": "borough" }
+    }
+  ]
+}

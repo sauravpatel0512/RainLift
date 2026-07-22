@@ -1,0 +1,4 @@
+# Generate locally after `make up`:
+#   make ingest > docs/evidence/ingest_log.txt
+#
+# Expect: non-zero Parquet bytes landed under raw/tlc/... and JSON under raw/weather/...

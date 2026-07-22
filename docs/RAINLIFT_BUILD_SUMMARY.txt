@@ -1,0 +1,37 @@
+RainLift — build session summary (generated for later reference)
+================================================================
+
+Here’s what was implemented in one pass (codebase is now a full RainLift skeleton aligned with <<RainLift_SPEC>>.md and PROGRESS.md).
+
+DELIVERED
+---------
+- Config & deps: .env.example, requirements.txt, pyproject.toml, .gitignore
+- Compose: docker-compose.yml — MinIO, Nessie, MongoDB, Trino, Streamlit (build), minio-init + scripts/minio-init.sh
+- Trino: configs/trino/{node.properties,config.properties,jvm.config,catalog/iceberg.properties}
+- Python package under src/rainlift/: config, ingest (minio_raw, tlc_fetch, weather_fetch, __main__), metadata/mongo_runs, curate (transforms, iceberg_tables, __main__), quality/run_ge, marts/trino_runner + __main__, dashboard/app.py
+- SQL: sql/trino/create_schemas.sql, create_trip_weather_daily.sql, create_mart_rain_demand_lift.sql, apply_order.txt (mart LAST)
+- GE layout: configs/great_expectations/great.yml + expectations/curated/*.json
+- Scripts: scripts/wait_for_tcp.py, verify_raw.ps1, verify_raw.sh
+- Tests: tests/test_*.py (6 tests), pytest.ini (integration / slow)
+- Ops: Makefile (up, down, ingest, curate, quality, mart, test with PYTHONPATH=src), Dockerfile, .github/workflows/ci.yml
+- Docs: README.md, docs/audit_no_cloud.md, docs/evidence/* templates, Section 9 in docs/specs/<<RainLift_SPEC>>.md filled with measurable placeholders and evidence pointers
+
+VERIFICATION RUN (at session time)
+----------------------------------
+- pytest: 6 passed (WSL python3 + PYTHONPATH=src)
+- docker compose config: succeeds on Windows (Docker Compose v5.1.0)
+
+PROGRESS.MD STATUS
+------------------
+- Marked [x] for todos 2–48, 51–59, 61–66 (implementation + CI + docs).
+- Still [ ] (needs you): 49 (Streamlit PNG), 50 (Trino PNG or richer capture), 60 (push + green Actions on your repo).
+
+BEFORE YOU RUN THE FULL STACK
+-----------------------------
+1. cp .env.example .env and keep MinIO credentials in sync with configs/trino/catalog/iceberg.properties (defaults match).
+2. Use Python 3.11 for local dev if possible (CI target); Windows 3.14 may fail to build some wheels.
+3. Full CHECKPOINT A–G flows still need make up on your machine, then ingest → curate → quality → mart → Streamlit, and real evidence in docs/evidence/ (replace templates where noted).
+
+NEXT STEPS (WHEN YOU RETURN)
+----------------------------
+- Close the three open PROGRESS items: capture screenshots (49–50), push and confirm GitHub Actions (60), then flip those lines in PROGRESS.md to [x].

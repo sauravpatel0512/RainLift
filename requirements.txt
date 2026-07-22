@@ -1,0 +1,13 @@
+# Python 3.11 — RainLift
+pyiceberg[pyarrow]==0.7.0
+boto3==1.35.36
+pymongo==4.10.1
+trino==0.330.0
+great-expectations==0.18.19
+streamlit==1.39.0
+pytest==8.3.3
+python-dotenv==1.0.1
+requests==2.32.3
+pandas==2.2.3
+pyarrow==17.0.0
+urllib3==2.2.3

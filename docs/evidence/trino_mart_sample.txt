@@ -1,0 +1,5 @@
+-- After `make mart`:
+-- docker compose exec trino trino --execute "SELECT * FROM iceberg.rainlift.rain_demand_lift LIMIT 50"
+--
+-- Manual spot-check (TODO 43): pick one borough and compare `trip_count` / weather join
+-- against `SELECT * FROM iceberg.rainlift.trip_weather_daily WHERE borough = 'Manhattan' LIMIT 20`.

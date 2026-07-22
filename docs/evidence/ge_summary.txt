@@ -1,0 +1,2 @@
+# Run locally after stack + curate:
+#   PYTHONPATH=src python -m rainlift.quality.run_ge | tee docs/evidence/ge_summary.txt

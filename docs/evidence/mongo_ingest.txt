@@ -1,0 +1,2 @@
+// Paste MongoDB queries after ingest, e.g.:
+// db.pipeline_runs.find({ dataset: { $in: ["tlc", "weather"] }, ingest_date: "2024-01-01" })

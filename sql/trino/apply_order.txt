@@ -1,0 +1,4 @@
+# One SQL filename per line; mart SQL must be last.
+create_schemas.sql
+create_trip_weather_daily.sql
+create_mart_rain_demand_lift.sql

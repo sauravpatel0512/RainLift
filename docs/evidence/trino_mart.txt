@@ -1,0 +1,1 @@
+-- Optional: capture Trino CLI/UI output for README screenshots.
