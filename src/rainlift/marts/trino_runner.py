@@ -1,8 +1,24 @@
-"""Apply ordered Trino SQL files (views / marts)."""
+"""Apply ordered Trino SQL files (marts)."""
 
 from __future__ import annotations
 
 from pathlib import Path
+
+
+def _statements(sql: str) -> list[str]:
+    """Split a SQL file into executable statements (skip empty / comment-only chunks)."""
+    parts: list[str] = []
+    for chunk in sql.split(";"):
+        lines = []
+        for ln in chunk.splitlines():
+            stripped = ln.strip()
+            if not stripped or stripped.startswith("--"):
+                continue
+            lines.append(ln)
+        body = "\n".join(lines).strip()
+        if body:
+            parts.append(body)
+    return parts
 
 
 def apply_sql_files(
@@ -33,4 +49,6 @@ def apply_sql_files(
         sql = path.read_text(encoding="utf-8").strip()
         if not sql:
             continue
-        cur.execute(sql)
+        for stmt in _statements(sql):
+            cur.execute(stmt)
+            print(f"applied {name}: {stmt.splitlines()[0][:80]}")

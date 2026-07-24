@@ -14,17 +14,27 @@ from rainlift.ingest.minio_raw import raw_tlc_key, raw_weather_key, s3_client
 
 
 def _catalog(settings: Settings) -> Any:
+    # PyIceberg 0.7 has no native Nessie type — use Nessie Iceberg REST.
+    # Host URI uses localhost; Compose pipeline overrides NESSIE_URI to nessie:19120/api/v1,
+    # so derive the Iceberg REST base from that host.
+    nessie_base = settings.nessie_uri.rstrip("/")
+    for suffix in ("/api/v2", "/api/v1", "/api"):
+        if nessie_base.endswith(suffix):
+            nessie_base = nessie_base[: -len(suffix)]
+            break
+    rest_uri = f"{nessie_base}/iceberg"
     return load_catalog(
-        "RainLift-nessie",
+        "rainlift",
         **{
-            "type": "nessie",
-            "uri": settings.nessie_uri.rstrip("/"),
-            "warehouse": settings.iceberg_warehouse,
+            "type": "rest",
+            "uri": rest_uri,
+            "warehouse": settings.iceberg_warehouse.rstrip("/"),
             "s3.endpoint": s3_endpoint_for_boto(settings),
             "s3.access-key-id": settings.minio_access_key,
             "s3.secret-access-key": settings.minio_secret_key,
             "s3.path-style-access": "true",
             "s3.region": settings.aws_region,
+            "downcast-ns-timestamp-to-us-on-write": "true",
         },
     )
 
@@ -61,8 +71,8 @@ def ensure_trips_table(settings: Settings | None = None) -> int:
     arrow_tbl = transforms.pandas_to_arrow(df)
 
     cat = _catalog(settings)
-    _ensure_ns(cat, "RainLift")
-    _overwrite_table(cat, ("RainLift", "tlc_trips"), arrow_tbl)
+    _ensure_ns(cat, "rainlift")
+    _overwrite_table(cat, ("rainlift", "tlc_trips"), arrow_tbl)
     return len(df)
 
 
@@ -76,6 +86,6 @@ def ensure_weather_table(settings: Settings | None = None) -> int:
     arrow_tbl = transforms.pandas_to_arrow(df)
 
     cat = _catalog(settings)
-    _ensure_ns(cat, "RainLift")
-    _overwrite_table(cat, ("RainLift", "weather_daily"), arrow_tbl)
+    _ensure_ns(cat, "rainlift")
+    _overwrite_table(cat, ("rainlift", "weather_daily"), arrow_tbl)
     return len(df)

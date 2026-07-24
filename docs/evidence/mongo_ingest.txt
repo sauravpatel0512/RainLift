@@ -1,2 +1,9 @@
-// Paste MongoDB queries after ingest, e.g.:
-// db.pipeline_runs.find({ dataset: { $in: ["tlc", "weather"] }, ingest_date: "2024-01-01" })
+# Captured 2026-07-24
+# docker compose exec -T mongodb mongosh --quiet --eval \
+#   "db.getSiblingDB('rainlift').pipeline_runs.find({}, {_id:0}).toArray()"
+
+pipeline_runs: 4 docs
+  tlc / 2024-01-01 / success
+  weather / 2024-01-01 / success
+  curated_tlc / 2024-01-01 / success / row_count=2964624
+  curated_weather / 2024-01-01 / success / row_count=31

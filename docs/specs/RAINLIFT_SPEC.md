@@ -70,7 +70,7 @@ RainLift does not rely on vendor free tiers. It relies on **open-source software
 ### Architecture description (prose)
 RainLift runs as a multi-container Docker Compose stack. **MinIO** provides S3-compatible buckets for a **raw** zone (immutable landed Parquet and JSON) and a **curated** zone (Iceberg table data and metadata). **Project Nessie** is the Iceberg **catalog**: it holds table metadata and enables Git-like references to Iceberg snapshots. **PyIceberg** (and supporting Python modules) ingests the fixed-month TLC Parquet slice, fetches **Open-Meteo** daily weather (no API key), lands raw artifacts to MinIO, then creates or updates **Iceberg** tables in the curated zone registered in Nessie.
 
-**MongoDB** stores one document per pipeline run (or per dataset run) keyed by logical fields **`ingest_date`** and **`dataset`** (and unique run id as needed), including status, row counts, content hashes, and timestamps. **Great Expectations** validates expectations on raw and curated datasets before marts are built.
+**MongoDB** stores one document per pipeline run (or per dataset run) keyed by logical fields **`ingest_date`** and **`dataset`** (and unique run id when useful), including status, row counts, content hashes, and timestamps. **Great Expectations** validates expectations on raw and curated datasets before marts are built.
 
 **Trino** is configured with connectors for **Iceberg** (via Nessie catalog) and queries curated tables. The final mart **`rain_demand_lift`** is implemented as the **last** Trino SQL artifact: a view or table exposing borough-level rainy vs dry average trip demand over the fixed month using the locked precipitation threshold. **Streamlit** reads Trino query results (or precomputed parquet/csv outputs produced by the mart step) and renders a chart recruiters understand in seconds.
 
@@ -192,8 +192,9 @@ RainLift/
     test_ingest_paths.py
   docs/
     specs/
-      <<RainLift_SPEC>>.md
-    PROGRESS.md
+      RAINLIFT_SPEC.md
+    FAILURE_NOTES.md
+    validation-log.md
   .github/
     workflows/
       ci.yml
@@ -309,7 +310,7 @@ Each bullet must include at least one **real number or measurable claim** (row c
 4. Output preview: Streamlit screenshot + example Trino query result for `rain_demand_lift`.
 5. Deep dive: data model, metric definition, local lakehouse notes (MinIO, Nessie, Trino).
 6. Honest limitations (single weather point, borough mapping assumptions).
-7. Link to `docs/specs/<<RainLift_SPEC>>.md`.
+7. Link to `docs/specs/RAINLIFT_SPEC.md`.
 
 ### Screenshot plan
 - Screenshot 1: README Mermaid rendered with **Iceberg** and **Nessie** visible.

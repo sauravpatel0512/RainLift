@@ -8,6 +8,8 @@ ENV PYTHONPATH=/app/src
 
 COPY requirements.txt README.md ./
 COPY src ./src
+COPY sql ./sql
+COPY configs ./configs
 
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt

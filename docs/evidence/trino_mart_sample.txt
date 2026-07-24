@@ -1,5 +1,25 @@
--- After `make mart`:
--- docker compose exec trino trino --execute "SELECT * FROM iceberg.rainlift.rain_demand_lift LIMIT 50"
---
--- Manual spot-check (TODO 43): pick one borough and compare `trip_count` / weather join
--- against `SELECT * FROM iceberg.rainlift.trip_weather_daily WHERE borough = 'Manhattan' LIMIT 20`.
+# Captured 2026-07-24 after make mart
+# docker compose exec -T trino trino --execute "SELECT * FROM iceberg.rainlift.rain_demand_lift ORDER BY borough"
+# columns: borough, rainy_day_avg_trips, dry_day_avg_trips, rain_demand_lift, rainy_day_avg_fare, dry_day_avg_fare, insufficient_weather_variation
+
+Bronx	209.5	227.34782608695653	0.9214955058328552	31.433094764143963	37.41644177195658	false
+Brooklyn	727.875	845.0	0.8613905325443787	27.80514122584324	31.437872024444875	false
+EWR	8.625	9.826086956521738	0.8777654867256638	2.1113591269841265	1.6479839544513457	false
+Manhattan	84377.375	85735.39130434782	0.9841603766695708	13.384535227282564	13.752462218619154	false
+Queens	8627.625	8874.08695652174	0.9722267814447536	31.07724938480171	32.4700214376381	false
+Staten Island	2.5714285714285716	2.5714285714285716	1.0	24.784920634920635	15.278930461073323	false
+Unknown	313.625	341.3478260869565	0.9187842313081137	13.906689082490354	15.46620541702305	false
+unknown	57.125	52.21739130434783	1.0939841798501249	12.694374569388783	12.808000477030417	false
+
+# Spot-check Manhattan trip_weather_daily (first 10 days):
+# borough, trip_date, trip_count, precipitation_sum
+Manhattan	2024-01-01	68416	0.0
+Manhattan	2024-01-02	62923	0.0
+Manhattan	2024-01-03	70556	0.0
+Manhattan	2024-01-04	91923	0.0
+Manhattan	2024-01-05	93189	0.0
+Manhattan	2024-01-06	87922	11.0
+Manhattan	2024-01-07	57166	7.3
+Manhattan	2024-01-08	69512	0.0
+Manhattan	2024-01-09	85414	31.5
+Manhattan	2024-01-10	84796	28.2

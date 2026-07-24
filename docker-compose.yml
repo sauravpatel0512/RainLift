@@ -23,6 +23,10 @@ services:
     image: ghcr.io/projectnessie/nessie:0.99.0
     ports:
       - "19120:19120"
+    environment:
+      QUARKUS_CONFIG_LOCATIONS: /deployments/config/application.properties
+    volumes:
+      - ./configs/nessie/application.properties:/deployments/config/application.properties:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:19120/api/v2/config"]
       interval: 5s
@@ -46,7 +50,8 @@ services:
   trino:
     image: trinodb/trino:453
     ports:
-      - "8080:8080"
+      # Host 8088 — avoid clash with local Airflow/other apps on 8080
+      - "${TRINO_HOST_PORT:-8088}:8080"
     volumes:
       - ./configs/trino:/etc/trino:ro
     environment:
@@ -70,15 +75,16 @@ services:
     ports:
       - "8501:8501"
     environment:
-      TRINO_HOST: ${TRINO_HOST:-trino}
-      TRINO_PORT: ${TRINO_PORT:-8080}
+      # Always Compose DNS — do not inherit host .env TRINO_HOST=localhost
+      TRINO_HOST: trino
+      TRINO_PORT: "8080"
       TRINO_USER: ${TRINO_USER:-rainlift}
     depends_on:
       trino:
         condition: service_healthy
 
   minio-init:
-    image: minio/mc:RELEASE.2024-11-21T17-38-14Z
+    image: minio/mc:RELEASE.2024-10-08T09-37-26Z
     depends_on:
       minio:
         condition: service_healthy
@@ -88,6 +94,52 @@ services:
     entrypoint: ["/bin/sh", "/scripts/minio-init.sh"]
     volumes:
       - ./scripts/minio-init.sh:/scripts/minio-init.sh:ro
+
+  # One-shot runner for ingest/curate/quality/mart (Compose DNS; no host Python 3.11 required).
+  # Usage: docker compose run --rm pipeline -m rainlift.ingest
+  pipeline:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    profiles: ["pipeline"]
+    working_dir: /app
+    volumes:
+      - .:/app
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    environment:
+      PYTHONPATH: /app/src
+      MINIO_ENDPOINT: http://minio:9000
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-minio}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-minio_dev_change_me}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      S3_PATH_STYLE_ACCESS: "true"
+      RAW_BUCKET: ${RAW_BUCKET:-raw}
+      CURATED_BUCKET: ${CURATED_BUCKET:-curated}
+      NESSIE_URI: http://nessie:19120/api/v1
+      MONGO_URI: mongodb://mongodb:27017
+      MONGO_DB: ${MONGO_DB:-rainlift}
+      TRINO_HOST: trino
+      TRINO_PORT: "8080"
+      TRINO_USER: ${TRINO_USER:-rainlift}
+      TLC_MONTH: ${TLC_MONTH:-2024-01}
+      TLC_PARQUET_URL: ${TLC_PARQUET_URL:-https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2024-01.parquet}
+      TAXI_ZONE_LOOKUP_URL: ${TAXI_ZONE_LOOKUP_URL:-https://d37ci6vzurychx.cloudfront.net/misc/taxi_zone_lookup.csv}
+      OPEN_METEO_BASE_URL: ${OPEN_METEO_BASE_URL:-https://archive-api.open-meteo.com/v1/archive}
+      WEATHER_LAT: ${WEATHER_LAT:-40.7128}
+      WEATHER_LON: ${WEATHER_LON:-"-74.006"}
+      ICEBERG_WAREHOUSE: ${ICEBERG_WAREHOUSE:-s3://curated/wh/}
+    depends_on:
+      minio:
+        condition: service_healthy
+      nessie:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+      trino:
+        condition: service_healthy
+    entrypoint: ["python"]
 
 volumes:
   minio_data:

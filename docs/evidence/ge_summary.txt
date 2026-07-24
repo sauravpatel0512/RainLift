@@ -1,2 +1,4 @@
-# Run locally after stack + curate:
-#   PYTHONPATH=src python -m rainlift.quality.run_ge | tee docs/evidence/ge_summary.txt
+# Captured 2026-07-24 after make quality
+# docker compose run --rm pipeline -m rainlift.quality.run_ge
+
+Great Expectations: OK (tlc_trips n=2964624, sample=29839, weather=31)

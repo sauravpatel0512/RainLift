@@ -1,3 +1,6 @@
--- After curate + Trino healthy:
--- docker compose exec trino trino --execute "SELECT count(*) FROM iceberg.rainlift.tlc_trips WHERE year=2024 AND month=1"
--- docker compose exec trino trino --execute "SELECT count(*) FROM iceberg.rainlift.weather_daily WHERE year=2024 AND month=1"
+# Captured 2026-07-24 after make curate (Trino healthy)
+# docker compose exec -T trino trino --execute "SELECT count(*) FROM iceberg.rainlift.tlc_trips WHERE year=2024 AND month=1"
+# docker compose exec -T trino trino --execute "SELECT count(*) FROM iceberg.rainlift.weather_daily WHERE year=2024 AND month=1"
+
+tlc_trips (year=2024, month=1): 2964606
+weather_daily (year=2024, month=1): 31

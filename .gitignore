@@ -14,3 +14,18 @@ Thumbs.db
 uncommitted/
 *.log
 great_expectations/uncommitted/
+.vscode/
+
+# AI / agent tooling (never commit)
+.cursor/
+.claude/
+.aider*
+.specify/
+AGENTS.md
+CLAUDE.md
+
+# Personal resume lives outside this portfolio repo
+Saurav_Patel_Resume.tex
+*.aux
+*.out
+*.synctex.gz

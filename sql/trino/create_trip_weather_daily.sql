@@ -1,5 +1,8 @@
 -- Borough × calendar day trip aggregates joined to daily weather (fixed month: 2024-01).
-CREATE OR REPLACE VIEW iceberg.rainlift.trip_weather_daily AS
+-- Materialized Iceberg table: Nessie catalogs do not support CREATE VIEW.
+DROP TABLE IF EXISTS iceberg.rainlift.trip_weather_daily;
+
+CREATE TABLE iceberg.rainlift.trip_weather_daily AS
 WITH trips AS (
   SELECT
     borough,
@@ -26,4 +29,4 @@ SELECT
   w.precipitation_sum,
   w.temperature_2m_mean
 FROM trips t
-LEFT JOIN wx w ON t.trip_date = w.d;
+LEFT JOIN wx w ON t.trip_date = w.d

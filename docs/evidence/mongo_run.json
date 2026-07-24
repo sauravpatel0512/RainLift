@@ -1,1 +1,26 @@
-{}
+[
+  {
+    "dataset": "tlc",
+    "ingest_date": "2024-01-01",
+    "row_count": null,
+    "status": "success"
+  },
+  {
+    "ingest_date": "2024-01-01",
+    "dataset": "weather",
+    "row_count": null,
+    "status": "success"
+  },
+  {
+    "ingest_date": "2024-01-01",
+    "dataset": "curated_tlc",
+    "row_count": 2964624,
+    "status": "success"
+  },
+  {
+    "ingest_date": "2024-01-01",
+    "dataset": "curated_weather",
+    "row_count": 31,
+    "status": "success"
+  }
+]

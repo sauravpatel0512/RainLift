@@ -1,5 +1,8 @@
 -- Mart: rainy (> 5mm) vs dry (<= 5mm) average demand lift by borough — must be last in apply order.
-CREATE OR REPLACE VIEW iceberg.rainlift.rain_demand_lift AS
+-- Materialized Iceberg table: Nessie catalogs do not support CREATE VIEW.
+DROP TABLE IF EXISTS iceberg.rainlift.rain_demand_lift;
+
+CREATE TABLE iceberg.rainlift.rain_demand_lift AS
 WITH classified AS (
   SELECT
     borough,
@@ -32,4 +35,4 @@ SELECT
   rainy_day_avg_duration_min,
   dry_day_avg_duration_min,
   (rainy_days = 0 OR dry_days = 0) AS insufficient_weather_variation
-FROM agg;
+FROM agg

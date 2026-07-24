@@ -71,4 +71,14 @@ def open_meteo_json_to_frame(payload: dict[str, Any]) -> pd.DataFrame:
 
 
 def pandas_to_arrow(df: pd.DataFrame) -> pa.Table:
-    return pa.Table.from_pandas(df, preserve_index=False)
+    tbl = pa.Table.from_pandas(df, preserve_index=False)
+    # Iceberg rejects ns timestamp precision — downcast to microseconds.
+    new_fields = []
+    for field in tbl.schema:
+        if pa.types.is_timestamp(field.type) and field.type.unit == "ns":
+            new_fields.append(field.with_type(pa.timestamp("us", tz=field.type.tz)))
+        else:
+            new_fields.append(field)
+    if new_fields != list(tbl.schema):
+        tbl = tbl.cast(pa.schema(new_fields))
+    return tbl

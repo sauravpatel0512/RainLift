@@ -1,1 +1,4 @@
--- Optional: capture Trino CLI/UI output for README screenshots.
+# Mart table present after make mart (2026-07-24)
+# iceberg.rainlift.rain_demand_lift — 8 borough/zone rows (see trino_mart_sample.txt)
+SELECT count(*) FROM iceberg.rainlift.rain_demand_lift;
+-- 8

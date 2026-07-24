@@ -1,4 +1,6 @@
-# Generate locally after `make up`:
-#   make ingest > docs/evidence/ingest_log.txt
-#
-# Expect: non-zero Parquet bytes landed under raw/tlc/... and JSON under raw/weather/...
+# Captured 2026-07-24 after make ingest (MinIO bucket `raw`)
+# docker compose run --rm --entrypoint python pipeline -c "<list_objects>"
+
+raw/tlc/year=2024/month=01/yellow_tripdata_2024-01.parquet  49961641 bytes
+raw/weather/year=2024/month=01/open_meteo_daily.json         1127 bytes
+status: success (Mongo pipeline_runs for tlc + weather)
