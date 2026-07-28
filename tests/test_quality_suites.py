@@ -1,0 +1,88 @@
+"""Offline curated suite tests (pure pandas — no Great Expectations import required)."""
+
+from __future__ import annotations
+
+import pandas as pd
+import pytest
+
+from rainlift.quality.suites import (
+    TRIPS_SUITE,
+    WEATHER_SUITE,
+    evaluate_suite,
+    expectation_count,
+    load_suite,
+)
+
+
+@pytest.fixture
+def trips_ok() -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            "borough": ["Manhattan", "Brooklyn", "Queens"],
+            "trip_duration_min": [12.0, 8.5, 20.0],
+            "year": [2024, 2024, 2024],
+            "month": [1, 1, 1],
+        }
+    )
+
+
+@pytest.fixture
+def weather_ok() -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            "precipitation_sum": [0.0] * 20 + [6.2] * 11,
+            "temperature_2m_mean": [2.0] * 31,
+            "year": [2024] * 31,
+            "month": [1] * 31,
+        }
+    )
+
+
+def test_suite_files_exist_and_have_expectations():
+    trips = load_suite(TRIPS_SUITE)
+    weather = load_suite(WEATHER_SUITE)
+    assert trips["expectation_suite_name"] == "curated.trips_basic"
+    assert weather["expectation_suite_name"] == "curated.weather_basic"
+    assert expectation_count(trips) >= 6
+    assert expectation_count(weather) >= 5
+
+
+def test_trips_suite_passes_on_clean_frame(trips_ok):
+    ok, failures = evaluate_suite(trips_ok, load_suite(TRIPS_SUITE))
+    assert ok, failures
+
+
+def test_trips_suite_fails_on_null_borough(trips_ok):
+    bad = trips_ok.copy()
+    bad.loc[0, "borough"] = None
+    ok, failures = evaluate_suite(bad, load_suite(TRIPS_SUITE))
+    assert not ok
+    assert any("not_be_null" in f for f in failures)
+
+
+def test_trips_suite_fails_on_negative_duration(trips_ok):
+    bad = trips_ok.copy()
+    bad["trip_duration_min"] = [-5.0, -1.0, -2.0]
+    ok, failures = evaluate_suite(bad, load_suite(TRIPS_SUITE))
+    assert not ok
+    assert any("be_between" in f for f in failures)
+
+
+def test_weather_suite_passes_on_clean_frame(weather_ok):
+    ok, failures = evaluate_suite(weather_ok, load_suite(WEATHER_SUITE))
+    assert ok, failures
+
+
+def test_weather_suite_fails_on_bad_row_count(weather_ok):
+    bad = weather_ok.iloc[:5].copy()
+    ok, failures = evaluate_suite(bad, load_suite(WEATHER_SUITE))
+    assert not ok
+    assert any("row_count" in f for f in failures)
+
+
+def test_weather_suite_fails_on_negative_precip(weather_ok):
+    bad = weather_ok.copy()
+    bad.loc[0, "precipitation_sum"] = -1.0
+    ok, failures = evaluate_suite(bad, load_suite(WEATHER_SUITE))
+    assert not ok
+    assert any("be_between" in f for f in failures)

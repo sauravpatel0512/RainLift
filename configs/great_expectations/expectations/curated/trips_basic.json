@@ -1,12 +1,65 @@
 {
-  "data_asset_type": null,
   "expectation_suite_name": "curated.trips_basic",
-  "ge_cloud_id": null,
-  "meta": { "description": "Documented expectations mirror logic in `run_ge.py`." },
+  "data_asset_type": "Dataset",
+  "meta": {
+    "description": "Curated TLC trips contracts. Loaded by rainlift.quality.suites / run_ge.py; covered by offline pytest."
+  },
   "expectations": [
     {
       "expectation_type": "expect_column_values_to_not_be_null",
       "kwargs": { "column": "borough" }
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": { "column": "year" }
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": { "column": "month" }
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": { "column": "trip_duration_min" }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_between",
+      "kwargs": {
+        "column": "trip_duration_min",
+        "min_value": 0,
+        "max_value": 1440,
+        "mostly": 0.99
+      }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_in_set",
+      "kwargs": {
+        "column": "year",
+        "value_set": [2024]
+      }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_in_set",
+      "kwargs": {
+        "column": "month",
+        "value_set": [1]
+      }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_in_set",
+      "kwargs": {
+        "column": "borough",
+        "value_set": [
+          "Manhattan",
+          "Brooklyn",
+          "Queens",
+          "Bronx",
+          "Staten Island",
+          "EWR",
+          "Unknown",
+          "N/A",
+          "unknown"
+        ]
+      }
     }
   ]
 }

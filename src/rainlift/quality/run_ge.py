@@ -6,7 +6,14 @@ import pandas as pd
 import trino.dbapi
 from great_expectations.dataset import PandasDataset
 
-from rainlift.config import Settings, load_settings, repo_root
+from rainlift.config import Settings, load_settings
+from rainlift.quality.suites import (
+    TRIPS_SUITE,
+    WEATHER_SUITE,
+    apply_suite,
+    expectation_count,
+    load_suite,
+)
 
 
 def _fetch_all(conn: trino.dbapi.Connection, sql: str) -> pd.DataFrame:
@@ -19,6 +26,9 @@ def _fetch_all(conn: trino.dbapi.Connection, sql: str) -> pd.DataFrame:
 
 def run_expectations_suite(settings: Settings | None = None) -> None:
     settings = settings or load_settings()
+    trips_suite = load_suite(TRIPS_SUITE)
+    weather_suite = load_suite(WEATHER_SUITE)
+
     conn = trino.dbapi.connect(
         host=settings.trino_host,
         port=settings.trino_port,
@@ -35,12 +45,20 @@ def run_expectations_suite(settings: Settings | None = None) -> None:
         SELECT
           sum(CASE WHEN borough IS NULL THEN 1 ELSE 0 END) AS null_borough,
           sum(CASE WHEN year IS NULL THEN 1 ELSE 0 END) AS null_year,
+          sum(CASE WHEN month IS NULL THEN 1 ELSE 0 END) AS null_month,
           count(*) AS n
         FROM iceberg.rainlift.tlc_trips
         """,
     )
-    if int(null_trips.iloc[0]["null_borough"] or 0) > 0 or int(null_trips.iloc[0]["null_year"] or 0) > 0:
-        raise RuntimeError(f"Great Expectations failed on curated tlc_trips null audit: {null_trips.to_dict()}")
+    row = null_trips.iloc[0]
+    if (
+        int(row["null_borough"] or 0) > 0
+        or int(row["null_year"] or 0) > 0
+        or int(row["null_month"] or 0) > 0
+    ):
+        raise RuntimeError(
+            f"Great Expectations failed on curated tlc_trips null audit: {null_trips.to_dict()}"
+        )
 
     # Sample for PandasDataset column expectations (portfolio evidence without OOM).
     df_trips = _fetch_all(
@@ -56,25 +74,19 @@ def run_expectations_suite(settings: Settings | None = None) -> None:
             conn,
             "SELECT borough, trip_duration_min, year, month FROM iceberg.rainlift.tlc_trips LIMIT 10000",
         )
-    ds_t = PandasDataset(df_trips)
-    ds_t.expect_column_values_to_not_be_null("borough")
-    ds_t.expect_column_values_to_not_be_null("year")
-    res_t = ds_t.validate()
-    if not res_t.success:
-        raise RuntimeError("Great Expectations failed on curated tlc_trips sample")
+    apply_suite(PandasDataset(df_trips), trips_suite)
 
     df_w = _fetch_all(
         conn,
         "SELECT precipitation_sum, temperature_2m_mean, year, month FROM iceberg.rainlift.weather_daily",
     )
-    ds_w = PandasDataset(df_w)
-    ds_w.expect_column_values_to_not_be_null("year")
-    res_w = ds_w.validate()
-    if not res_w.success:
-        raise RuntimeError("Great Expectations failed on curated weather_daily")
+    apply_suite(PandasDataset(df_w), weather_suite)
 
-    _ = repo_root()  # reserved for future great.yml wiring
-    print(f"Great Expectations: OK (tlc_trips n={null_trips.iloc[0]['n']}, sample={len(df_trips)}, weather={len(df_w)})")
+    print(
+        "Great Expectations: OK "
+        f"(tlc_trips n={row['n']}, sample={len(df_trips)}, weather={len(df_w)}, "
+        f"suite_expectations={expectation_count(trips_suite) + expectation_count(weather_suite)})"
+    )
     return None
 
 
