@@ -5,6 +5,8 @@
 # (configs/great_expectations/expectations/curated/*.json) — 8 trips + 7 weather
 # expectations applied via rainlift.quality.suites; CI proves them with
 # tests/test_quality_suites.py (offline, no lakehouse required).
+# 2026-08-25: mart suite configs/great_expectations/expectations/marts/rain_demand_lift.json
+# (8 expectations + empty-cohort ⇒ null lift) — offline pytest, live apply after make mart.
 
 Great Expectations: OK (tlc_trips n=2964624, sample=29839, weather=31)
 Suite expectations: trips_basic=8, weather_basic=7 (total=15)

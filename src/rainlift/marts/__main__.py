@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from rainlift.config import load_settings, repo_root
 from rainlift.marts.trino_runner import apply_sql_files
+from rainlift.quality.run_ge import validate_mart_if_present
 
 
 def main() -> None:
@@ -16,6 +17,7 @@ def main() -> None:
         user=settings.trino_user,
     )
     print("Applied SQL from", sql_dir)
+    validate_mart_if_present(settings)
 
 
 if __name__ == "__main__":

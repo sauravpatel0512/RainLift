@@ -1,0 +1,70 @@
+{
+  "expectation_suite_name": "marts.rain_demand_lift",
+  "data_asset_type": "Dataset",
+  "meta": {
+    "description": "Mart rain_demand_lift contracts (borough grain, rainy vs dry lift). Loaded by rainlift.quality.suites; live Trino apply after mart SQL; covered by offline pytest."
+  },
+  "expectations": [
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": { "column": "borough" }
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": { "column": "insufficient_weather_variation" }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_in_set",
+      "kwargs": {
+        "column": "borough",
+        "value_set": [
+          "Manhattan",
+          "Brooklyn",
+          "Queens",
+          "Bronx",
+          "Staten Island",
+          "EWR",
+          "Unknown",
+          "N/A",
+          "unknown"
+        ]
+      }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_in_set",
+      "kwargs": {
+        "column": "insufficient_weather_variation",
+        "value_set": [true, false]
+      }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_between",
+      "kwargs": {
+        "column": "rainy_day_avg_trips",
+        "min_value": 0
+      }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_between",
+      "kwargs": {
+        "column": "dry_day_avg_trips",
+        "min_value": 0
+      }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_between",
+      "kwargs": {
+        "column": "rain_demand_lift",
+        "min_value": 0,
+        "max_value": 10
+      }
+    },
+    {
+      "expectation_type": "expect_table_row_count_to_be_between",
+      "kwargs": {
+        "min_value": 1,
+        "max_value": 20
+      }
+    }
+  ]
+}

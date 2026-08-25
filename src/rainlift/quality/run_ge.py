@@ -8,9 +8,11 @@ from great_expectations.dataset import PandasDataset
 
 from rainlift.config import Settings, load_settings
 from rainlift.quality.suites import (
+    MART_LIFT_SUITE,
     TRIPS_SUITE,
     WEATHER_SUITE,
     apply_suite,
+    assert_lift_null_when_insufficient,
     expectation_count,
     load_suite,
 )
@@ -24,12 +26,8 @@ def _fetch_all(conn: trino.dbapi.Connection, sql: str) -> pd.DataFrame:
     return pd.DataFrame(rows, columns=cols)
 
 
-def run_expectations_suite(settings: Settings | None = None) -> None:
-    settings = settings or load_settings()
-    trips_suite = load_suite(TRIPS_SUITE)
-    weather_suite = load_suite(WEATHER_SUITE)
-
-    conn = trino.dbapi.connect(
+def _connect(settings: Settings) -> trino.dbapi.Connection:
+    return trino.dbapi.connect(
         host=settings.trino_host,
         port=settings.trino_port,
         user=settings.trino_user,
@@ -37,6 +35,56 @@ def run_expectations_suite(settings: Settings | None = None) -> None:
         schema="rainlift",
         http_scheme="http",
     )
+
+
+def validate_mart_if_present(
+    settings: Settings | None = None,
+    conn: trino.dbapi.Connection | None = None,
+) -> str:
+    """Apply mart GE suite when ``rain_demand_lift`` exists. Safe to call before marts."""
+    settings = settings or load_settings()
+    own_conn = conn is None
+    conn = conn or _connect(settings)
+    try:
+        df_mart = _fetch_all(
+            conn,
+            """
+            SELECT
+              borough,
+              rainy_day_avg_trips,
+              dry_day_avg_trips,
+              rain_demand_lift,
+              insufficient_weather_variation
+            FROM iceberg.rainlift.rain_demand_lift
+            """,
+        )
+    except Exception:
+        return "skipped (table missing — run make mart)"
+    finally:
+        if own_conn:
+            try:
+                conn.close()
+            except Exception:
+                pass
+    if df_mart is None or df_mart.empty:
+        return "skipped (empty mart)"
+    mart_suite = load_suite(MART_LIFT_SUITE)
+    apply_suite(PandasDataset(df_mart), mart_suite)
+    ok_lift, lift_detail = assert_lift_null_when_insufficient(df_mart)
+    if not ok_lift:
+        raise RuntimeError(
+            "Mart contract failed: lift must be null when "
+            f"insufficient_weather_variation is true ({lift_detail})"
+        )
+    return f"ok n={len(df_mart)} expectations={expectation_count(mart_suite)}"
+
+
+def run_expectations_suite(settings: Settings | None = None) -> None:
+    settings = settings or load_settings()
+    trips_suite = load_suite(TRIPS_SUITE)
+    weather_suite = load_suite(WEATHER_SUITE)
+
+    conn = _connect(settings)
 
     # Full-table null audit (cheap aggregates — avoid pulling multi-million rows into pandas).
     null_trips = _fetch_all(
@@ -82,10 +130,13 @@ def run_expectations_suite(settings: Settings | None = None) -> None:
     )
     apply_suite(PandasDataset(df_w), weather_suite)
 
+    mart_msg = validate_mart_if_present(settings, conn=conn)
+
     print(
         "Great Expectations: OK "
         f"(tlc_trips n={row['n']}, sample={len(df_trips)}, weather={len(df_w)}, "
-        f"suite_expectations={expectation_count(trips_suite) + expectation_count(weather_suite)})"
+        f"suite_expectations={expectation_count(trips_suite) + expectation_count(weather_suite)}, "
+        f"mart={mart_msg})"
     )
     return None
 

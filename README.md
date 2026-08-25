@@ -52,8 +52,8 @@ Longer write-up: **[docs/FAILURE_NOTES.md](docs/FAILURE_NOTES.md)**. Recorded gr
 2. `make up` — starts MinIO, Nessie, MongoDB, Trino, Streamlit, and MinIO bucket init.
 3. `make ingest` — lands TLC Parquet + Open-Meteo JSON into MinIO `raw/` prefixes and writes Mongo run docs (runs in Compose `pipeline` by default; `HOST_PIPELINE=1` for local Python 3.11).
 4. `make curate` — builds curated Iceberg tables `rainlift.tlc_trips` and `rainlift.weather_daily` via PyIceberg + Nessie.
-5. `make quality` — Great Expectations on curated tables (JSON suites under `configs/great_expectations/expectations/curated/`, applied via Trino sample + full-table null audit).
-6. `make mart` — applies `sql/trino/apply_order.txt` (mart SQL **last**).
+5. `make quality` — Great Expectations on curated tables (JSON suites under `configs/great_expectations/expectations/curated/`, applied via Trino sample + full-table null audit). If `rain_demand_lift` already exists, the mart suite under `expectations/marts/` is applied too.
+6. `make mart` — applies `sql/trino/apply_order.txt` (mart SQL **last**), then GE on `rain_demand_lift` (borough set, non-negative avgs/lift, empty-cohort ⇒ null lift).
 7. Open Streamlit at `http://localhost:8501` (mart `rain_demand_lift`).
 
 No `make`? Same steps via `docker compose up -d --build` then `docker compose run --rm pipeline -m rainlift.<ingest|curate|mart>` / `... -m rainlift.quality.run_ge`.

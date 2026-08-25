@@ -1,4 +1,4 @@
-"""Load curated Great Expectations JSON suites and apply them to dataframes."""
+"""Load Great Expectations JSON suites and apply them to dataframes."""
 
 from __future__ import annotations
 
@@ -13,8 +13,12 @@ _REPO_ROOT = Path(__file__).resolve().parents[3]
 CURATED_DIR = (
     _REPO_ROOT / "configs" / "great_expectations" / "expectations" / "curated"
 )
+MARTS_DIR = (
+    _REPO_ROOT / "configs" / "great_expectations" / "expectations" / "marts"
+)
 TRIPS_SUITE = CURATED_DIR / "trips_basic.json"
 WEATHER_SUITE = CURATED_DIR / "weather_basic.json"
+MART_LIFT_SUITE = MARTS_DIR / "rain_demand_lift.json"
 
 # Expectation types used in curated suites (kept in sync with JSON files).
 SUPPORTED_EXPECTATIONS = frozenset(
@@ -103,6 +107,15 @@ def _eval_one(df: pd.DataFrame, name: str, kwargs: dict[str, Any]) -> tuple[bool
         return (rate >= mostly), f"pass_rate={rate:.4f} mostly={mostly}"
 
     return False, f"unhandled expectation {name}"
+
+
+def assert_lift_null_when_insufficient(df: pd.DataFrame) -> tuple[bool, str]:
+    """Mart contract: empty rainy or dry cohort → null lift (SQL CASE in create_mart)."""
+    if "insufficient_weather_variation" not in df.columns or "rain_demand_lift" not in df.columns:
+        return False, "missing insufficient_weather_variation or rain_demand_lift"
+    flag = df["insufficient_weather_variation"].fillna(False).astype(bool)
+    n_bad = int((flag & df["rain_demand_lift"].notna()).sum())
+    return (n_bad == 0), f"lift_present_when_insufficient={n_bad}"
 
 
 def apply_suite(
