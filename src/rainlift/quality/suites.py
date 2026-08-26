@@ -16,9 +16,13 @@ CURATED_DIR = (
 MARTS_DIR = (
     _REPO_ROOT / "configs" / "great_expectations" / "expectations" / "marts"
 )
+RAW_DIR = (
+    _REPO_ROOT / "configs" / "great_expectations" / "expectations" / "raw"
+)
 TRIPS_SUITE = CURATED_DIR / "trips_basic.json"
 WEATHER_SUITE = CURATED_DIR / "weather_basic.json"
 MART_LIFT_SUITE = MARTS_DIR / "rain_demand_lift.json"
+WEATHER_RAW_SUITE = RAW_DIR / "weather_daily_basic.json"
 
 # Expectation types used in curated suites (kept in sync with JSON files).
 SUPPORTED_EXPECTATIONS = frozenset(
@@ -116,6 +120,20 @@ def assert_lift_null_when_insufficient(df: pd.DataFrame) -> tuple[bool, str]:
     flag = df["insufficient_weather_variation"].fillna(False).astype(bool)
     n_bad = int((flag & df["rain_demand_lift"].notna()).sum())
     return (n_bad == 0), f"lift_present_when_insufficient={n_bad}"
+
+
+def flatten_open_meteo_daily(payload: dict[str, Any]) -> pd.DataFrame:
+    """Flatten Open-Meteo archive JSON (`daily.time` + `daily.precipitation_sum`) for raw GE."""
+    daily = payload.get("daily") or {}
+    times = daily.get("time") or []
+    precip = daily.get("precipitation_sum") or []
+    n = min(len(times), len(precip))
+    return pd.DataFrame(
+        {
+            "time": list(times)[:n],
+            "precipitation_sum": list(precip)[:n],
+        }
+    )
 
 
 def apply_suite(

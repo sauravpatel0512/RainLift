@@ -1,0 +1,32 @@
+{
+  "expectation_suite_name": "raw.weather_daily_basic",
+  "data_asset_type": "Dataset",
+  "meta": {
+    "description": "Light raw Open-Meteo daily contracts (flattened time + precip). Offline pytest; lighter than curated.weather_basic."
+  },
+  "expectations": [
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": { "column": "time" }
+    },
+    {
+      "expectation_type": "expect_column_values_to_not_be_null",
+      "kwargs": { "column": "precipitation_sum" }
+    },
+    {
+      "expectation_type": "expect_column_values_to_be_between",
+      "kwargs": {
+        "column": "precipitation_sum",
+        "min_value": 0,
+        "strict_min": false
+      }
+    },
+    {
+      "expectation_type": "expect_table_row_count_to_be_between",
+      "kwargs": {
+        "min_value": 28,
+        "max_value": 31
+      }
+    }
+  ]
+}

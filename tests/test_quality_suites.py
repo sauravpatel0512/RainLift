@@ -8,10 +8,12 @@ import pytest
 from rainlift.quality.suites import (
     MART_LIFT_SUITE,
     TRIPS_SUITE,
+    WEATHER_RAW_SUITE,
     WEATHER_SUITE,
     assert_lift_null_when_insufficient,
     evaluate_suite,
     expectation_count,
+    flatten_open_meteo_daily,
     load_suite,
 )
 
@@ -44,12 +46,15 @@ def test_suite_files_exist_and_have_expectations():
     trips = load_suite(TRIPS_SUITE)
     weather = load_suite(WEATHER_SUITE)
     mart = load_suite(MART_LIFT_SUITE)
+    raw_weather = load_suite(WEATHER_RAW_SUITE)
     assert trips["expectation_suite_name"] == "curated.trips_basic"
     assert weather["expectation_suite_name"] == "curated.weather_basic"
     assert mart["expectation_suite_name"] == "marts.rain_demand_lift"
+    assert raw_weather["expectation_suite_name"] == "raw.weather_daily_basic"
     assert expectation_count(trips) >= 6
     assert expectation_count(weather) >= 5
     assert expectation_count(mart) >= 8
+    assert expectation_count(raw_weather) >= 4
 
 
 def test_trips_suite_passes_on_clean_frame(trips_ok):
@@ -135,3 +140,28 @@ def test_mart_contract_fails_when_lift_set_despite_insufficient(mart_ok):
     flag_ok, detail = assert_lift_null_when_insufficient(bad)
     assert not flag_ok
     assert "lift_present_when_insufficient=1" in detail
+
+
+def test_flatten_open_meteo_and_raw_suite_pass():
+    payload = {
+        "daily": {
+            "time": [f"2024-01-{d:02d}" for d in range(1, 32)],
+            "precipitation_sum": [0.0] * 20 + [6.0] * 11,
+        }
+    }
+    df = flatten_open_meteo_daily(payload)
+    ok, failures = evaluate_suite(df, load_suite(WEATHER_RAW_SUITE))
+    assert ok, failures
+
+
+def test_raw_weather_suite_fails_on_negative_precip():
+    payload = {
+        "daily": {
+            "time": [f"2024-01-{d:02d}" for d in range(1, 32)],
+            "precipitation_sum": [-1.0] + [0.0] * 30,
+        }
+    }
+    df = flatten_open_meteo_daily(payload)
+    ok, failures = evaluate_suite(df, load_suite(WEATHER_RAW_SUITE))
+    assert not ok
+    assert any("be_between" in f for f in failures)
