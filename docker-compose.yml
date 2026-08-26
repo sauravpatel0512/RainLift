@@ -79,9 +79,13 @@ services:
       TRINO_HOST: trino
       TRINO_PORT: "8080"
       TRINO_USER: ${TRINO_USER:-rainlift}
+      MONGO_URI: mongodb://mongodb:27017
+      MONGO_DB: ${MONGO_DB:-rainlift}
     depends_on:
       trino:
         condition: service_healthy
+      mongodb:
+        condition: service_started
 
   minio-init:
     image: minio/mc:RELEASE.2024-10-08T09-37-26Z
