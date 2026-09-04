@@ -8,7 +8,7 @@ from typing import Any
 from pyiceberg.catalog import load_catalog
 from pyiceberg.exceptions import NoSuchTableError
 
-from rainlift.config import Settings, load_settings, s3_endpoint_for_boto
+from rainlift.config import Settings, load_settings, parse_tlc_month, s3_endpoint_for_boto
 from rainlift.curate import transforms
 from rainlift.ingest.minio_raw import raw_tlc_key, raw_weather_key, s3_client
 
@@ -62,7 +62,7 @@ def _overwrite_table(cat: Any, ident: tuple[str, str], arrow_tbl: Any) -> None:
 
 def ensure_trips_table(settings: Settings | None = None) -> int:
     settings = settings or load_settings()
-    y, m = map(int, settings.tlc_month.split("-"))
+    y, m = parse_tlc_month(settings.tlc_month)
     fname = settings.tlc_parquet_url.rstrip("/").split("/")[-1]
     key = raw_tlc_key(y, m, fname)
     zones = transforms.load_taxi_zone_lookup(settings.taxi_zone_lookup_url)
@@ -78,7 +78,7 @@ def ensure_trips_table(settings: Settings | None = None) -> int:
 
 def ensure_weather_table(settings: Settings | None = None) -> int:
     settings = settings or load_settings()
-    y, m = map(int, settings.tlc_month.split("-"))
+    y, m = parse_tlc_month(settings.tlc_month)
     key = raw_weather_key(y, m, "open_meteo_daily.json")
     raw = _read_raw_bytes(settings, key)
     payload = json.loads(raw.decode("utf-8"))

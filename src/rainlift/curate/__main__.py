@@ -3,23 +3,17 @@
 from __future__ import annotations
 
 import json
-from datetime import date
 
-from rainlift.config import load_settings
+from rainlift.config import ingest_date_for_month, load_settings
 from rainlift.curate.iceberg_tables import ensure_trips_table, ensure_weather_table
 from rainlift.metadata.mongo_runs import ensure_indexes, get_collection, upsert_run
-
-
-def _ingest_date_for_month(ym: str) -> str:
-    y, m = map(int, ym.split("-"))
-    return date(y, m, 1).isoformat()
 
 
 def main() -> None:
     settings = load_settings()
     col = get_collection(settings.mongo_uri, settings.mongo_db)
     ensure_indexes(col)
-    ingest_date = _ingest_date_for_month(settings.tlc_month)
+    ingest_date = ingest_date_for_month(settings.tlc_month)
 
     n_trips = ensure_trips_table(settings)
     upsert_run(

@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import os
+from calendar import monthrange
 from dataclasses import dataclass
+from datetime import date
 from functools import lru_cache
 from pathlib import Path
 from urllib.parse import urlparse
@@ -14,6 +16,24 @@ from dotenv import load_dotenv
 def repo_root() -> Path:
     """Repository root (`RainLift/config.py` lives in `src/rainlift/`)."""
     return Path(__file__).resolve().parents[2]
+
+
+def parse_tlc_month(ym: str) -> tuple[int, int]:
+    """Parse pinned ``YYYY-MM`` into ``(year, month)``."""
+    y, m = ym.split("-")
+    return int(y), int(m)
+
+
+def ingest_date_for_month(ym: str) -> str:
+    """First calendar day of TLC month as ``YYYY-MM-DD`` (Mongo run identity)."""
+    y, m = parse_tlc_month(ym)
+    return date(y, m, 1).isoformat()
+
+
+def month_window(ym: str) -> tuple[date, date]:
+    """Inclusive start/end dates for the pinned TLC month."""
+    y, m = parse_tlc_month(ym)
+    return date(y, m, 1), date(y, m, monthrange(y, m)[1])
 
 
 @dataclass(frozen=True)

@@ -8,13 +8,8 @@ from typing import Callable
 
 import requests
 
-from rainlift.config import Settings, load_settings
+from rainlift.config import Settings, load_settings, parse_tlc_month
 from rainlift.ingest.minio_raw import put_raw_object, raw_tlc_key
-
-
-def _month_parts(month: str) -> tuple[int, int]:
-    y, m = month.split("-")
-    return int(y), int(m)
 
 
 def stream_tlc_parquet_to_minio(
@@ -30,7 +25,7 @@ def stream_tlc_parquet_to_minio(
     """
     settings = settings or load_settings()
     url = url or settings.tlc_parquet_url
-    year, month = _month_parts(settings.tlc_month)
+    year, month = parse_tlc_month(settings.tlc_month)
     filename = url.rstrip("/").split("/")[-1]
     key = raw_tlc_key(year, month, filename)
 

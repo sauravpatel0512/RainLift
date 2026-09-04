@@ -4,23 +4,12 @@ from __future__ import annotations
 
 import hashlib
 import json
-from calendar import monthrange
-from datetime import date
 from typing import Any
 
 import requests
 
-from rainlift.config import Settings, load_settings
+from rainlift.config import Settings, load_settings, month_window
 from rainlift.ingest.minio_raw import put_raw_object, raw_weather_key
-
-
-def _month_window(month: str) -> tuple[date, date]:
-    y_str, m_str = month.split("-")
-    y, m = int(y_str), int(m_str)
-    start = date(y, m, 1)
-    last = monthrange(y, m)[1]
-    end = date(y, m, last)
-    return start, end
 
 
 def fetch_open_meteo_daily(settings: Settings | None = None) -> tuple[str, str, int]:
@@ -30,8 +19,8 @@ def fetch_open_meteo_daily(settings: Settings | None = None) -> tuple[str, str, 
     Returns (s3_key, sha256_hex, byte_length).
     """
     settings = settings or load_settings()
-    start, end = _month_window(settings.tlc_month)
-    year, month = int(start.year), int(start.month)
+    start, end = month_window(settings.tlc_month)
+    year, month = start.year, start.month
 
     params: dict[str, Any] = {
         "latitude": settings.weather_lat,
